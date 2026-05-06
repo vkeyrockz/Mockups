@@ -1,1 +1,596 @@
 
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Omron Carousel — Manual Pause Demo</title>
+
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: Arial, sans-serif;
+    background: #f0f0f0;
+  }
+
+  .hero {
+    position: relative;
+    height: 340px;
+    overflow: hidden;
+    background: #8a9ab0;
+  }
+
+  .slide {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    opacity: 0;
+    transition: opacity 0.6s ease;
+  }
+
+  .slide.active {
+    opacity: 1;
+  }
+
+  .slide-bg {
+    position: absolute;
+    inset: 0;
+  }
+
+  .slide-content {
+    position: relative;
+    z-index: 2;
+    padding: 36px 32px;
+    width: 340px;
+    flex-shrink: 0;
+  }
+
+  .slide-tag {
+    display: inline-block;
+    background: #e8f0fa;
+    color: #0c447c;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    padding: 3px 9px;
+    border-radius: 2px;
+    margin-bottom: 14px;
+    text-transform: uppercase;
+  }
+
+  .slide-box {
+    background: #1a3a6b;
+    padding: 20px 22px;
+    border-radius: 2px;
+  }
+
+  .slide-box h2 {
+    color: #fff;
+    font-size: 20px;
+    font-weight: 700;
+    line-height: 1.3;
+    margin-bottom: 10px;
+  }
+
+  .slide-box p {
+    color: #b5d4f4;
+    font-size: 12px;
+    line-height: 1.6;
+    margin-bottom: 14px;
+  }
+
+  .slide-box a {
+    display: inline-block;
+    border: 1px solid #fff;
+    color: #fff;
+    font-size: 11px;
+    padding: 6px 14px;
+    border-radius: 2px;
+    text-decoration: none;
+  }
+
+  .slide-visual {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .machine {
+    display: flex;
+    align-items: flex-end;
+    gap: 8px;
+  }
+
+  .machine-part {
+    background: #2a3a50;
+    border-radius: 3px;
+  }
+
+  .edge-arrow {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    z-index: 10;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.15);
+    border: 1.5px solid rgba(255,255,255,0.50);
+    color: #fff;
+    font-size: 18px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .edge-arrow.left { left: 12px; }
+  .edge-arrow.right { right: 12px; }
+
+  .carousel-nav {
+    background: #fff;
+    border-top: 1px solid #e0e0e0;
+    padding: 14px 24px 18px;
+  }
+
+  .seg-bar {
+    display: flex;
+    gap: 5px;
+    width: 55%;
+    margin: 0 auto;
+  }
+
+  .seg {
+    flex: 1;
+    height: 8px;
+    border-radius: 4px;
+    background: #e0e0e0;
+    cursor: pointer;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .seg.past {
+    background: #7eb8f7;
+  }
+
+  .seg-fill {
+    position: absolute;
+    inset: 0;
+    width: 0%;
+    background: #1a3a6b;
+    border-radius: 4px;
+  }
+
+  .nav-info {
+    margin-top: 12px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .slide-name {
+    font-size: 14px;
+    font-weight: 700;
+    color: #1a3a6b;
+  }
+
+  .slide-desc {
+    font-size: 12px;
+    color: #666;
+    margin-top: 4px;
+  }
+
+  .slide-counter {
+    font-size: 12px;
+    font-weight: 700;
+    color: #1a3a6b;
+  }
+</style>
+</head>
+
+<body>
+
+<div class="hero">
+
+  <button class="edge-arrow left" onclick="step(-1)">&#8592;</button>
+  <button class="edge-arrow right" onclick="step(1)">&#8594;</button>
+
+  <div class="slide active" id="slide-0">
+    <div class="slide-bg" style="background:#8a9ab0;"></div>
+
+    <div class="slide-content">
+      <span class="slide-tag">New</span>
+
+      <div class="slide-box">
+        <h2>The DX100 Data Flow Edge Device</h2>
+
+        <p>
+          Smarter data at the edge with low-code logic and real-time insights.
+        </p>
+
+        <a href="#">Learn More</a>
+      </div>
+    </div>
+
+    <div class="slide-visual">
+      <div class="machine">
+        <div class="machine-part" style="width:32px;height:90px"></div>
+        <div class="machine-part" style="width:22px;height:120px"></div>
+        <div class="machine-part" style="width:44px;height:70px"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="slide" id="slide-1">
+    <div class="slide-bg" style="background:#7a8fa0;"></div>
+
+    <div class="slide-content">
+      <span class="slide-tag">Featured</span>
+
+      <div class="slide-box">
+        <h2>NX Series Machine Controllers</h2>
+
+        <p>
+          High-speed, high-precision machine control for production lines.
+        </p>
+
+        <a href="#">Learn More</a>
+      </div>
+    </div>
+
+    <div class="slide-visual">
+      <div class="machine">
+        <div class="machine-part" style="width:50px;height:100px"></div>
+        <div class="machine-part" style="width:28px;height:80px"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="slide" id="slide-2">
+    <div class="slide-bg" style="background:#6a8090;"></div>
+
+    <div class="slide-content">
+      <span class="slide-tag">Safety</span>
+
+      <div class="slide-box">
+        <h2>Safety Solutions by Omron</h2>
+
+        <p>
+          Certified safety systems designed for uptime and worker protection.
+        </p>
+
+        <a href="#">Learn More</a>
+      </div>
+    </div>
+
+    <div class="slide-visual">
+      <div class="machine">
+        <div class="machine-part" style="width:24px;height:70px"></div>
+        <div class="machine-part" style="width:40px;height:130px"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="slide" id="slide-3">
+    <div class="slide-bg" style="background:#5a7080;"></div>
+
+    <div class="slide-content">
+      <span class="slide-tag">Software</span>
+
+      <div class="slide-box">
+        <h2>Sysmac Studio Software</h2>
+
+        <p>
+          One environment for motion, logic, vision, and safety programming.
+        </p>
+
+        <a href="#">Learn More</a>
+      </div>
+    </div>
+
+    <div class="slide-visual">
+      <div class="machine">
+        <div class="machine-part" style="width:38px;height:85px"></div>
+        <div class="machine-part" style="width:26px;height:115px"></div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<div class="carousel-nav">
+
+  <div class="seg-bar">
+    <div class="seg active" id="seg-0" onclick="goTo(0, true)">
+      <div class="seg-fill" id="fill-0"></div>
+    </div>
+
+    <div class="seg" id="seg-1" onclick="goTo(1, true)">
+      <div class="seg-fill" id="fill-1"></div>
+    </div>
+
+    <div class="seg" id="seg-2" onclick="goTo(2, true)">
+      <div class="seg-fill" id="fill-2"></div>
+    </div>
+
+    <div class="seg" id="seg-3" onclick="goTo(3, true)">
+      <div class="seg-fill" id="fill-3"></div>
+    </div>
+  </div>
+
+  <div class="nav-info">
+    <div>
+      <div class="slide-name" id="slide-name">
+        The DX100 Data Flow Edge Device
+      </div>
+
+      <div class="slide-desc" id="slide-desc">
+        Smarter data at the edge with low-code logic and real-time insights.
+      </div>
+    </div>
+
+    <div class="slide-counter" id="slide-counter">
+      01 / 04
+    </div>
+  </div>
+
+</div>
+
+<script>
+
+const TOTAL = 4;
+const DURATION = 4000;
+const MANUAL_PAUSE = 5000;
+let isPaused = false;
+let pauseStartTime = 0;
+let pausedElapsed = 0;
+
+const slideData = [
+  {
+    title: "The DX100 Data Flow Edge Device",
+    desc: "Smarter data at the edge with low-code logic and real-time insights."
+  },
+  {
+    title: "NX Series Machine Controllers",
+    desc: "High-speed, high-precision machine control for production lines."
+  },
+  {
+    title: "Safety Solutions by Omron",
+    desc: "Certified safety systems designed for uptime and worker protection."
+  },
+  {
+    title: "Sysmac Studio Software",
+    desc: "One environment for motion, logic, vision, and safety programming."
+  }
+];
+
+let current = 0;
+
+let startTime = null;
+let rafId = null;
+let autoTimer = null;
+let resumeTimer = null;
+
+function animateFill(timestamp) {
+
+  if (!startTime) {
+    startTime = timestamp - pausedElapsed;
+  }
+
+  const elapsed = timestamp - startTime;
+
+  pausedElapsed = elapsed;
+
+  const pct = Math.min(
+    (elapsed / DURATION) * 100,
+    100
+  );
+
+  const fill = document.getElementById("fill-" + current);
+
+  if (fill) {
+    fill.style.width = pct + "%";
+  }
+
+  if (pct < 100 && !isPaused) {
+    rafId = requestAnimationFrame(animateFill);
+  }
+}
+
+function pauseCarousel() {
+
+  if (isPaused) {
+    return;
+  }
+
+  isPaused = true;
+
+  cancelAnimationFrame(rafId);
+
+  clearTimeout(autoTimer);
+
+  pauseStartTime = performance.now();
+}
+
+function resumeCarousel() {
+
+  if (!isPaused) {
+    return;
+  }
+
+  isPaused = false;
+
+  const remaining =
+    DURATION - pausedElapsed;
+
+  rafId = requestAnimationFrame(animateFill);
+
+  autoTimer = setTimeout(
+    next,
+    remaining
+  );
+}
+ 
+ function startAnimation() {
+
+  cancelAnimationFrame(rafId);
+
+  startTime = null;
+  pausedElapsed = 0;
+
+  const fill = document.getElementById("fill-" + current);
+
+  if (fill) {
+    fill.style.width = "0%";
+  }
+
+  rafId = requestAnimationFrame(animateFill);
+}
+
+function stopCarouselTimers() {
+  cancelAnimationFrame(rafId);
+
+  clearTimeout(autoTimer);
+
+  clearTimeout(resumeTimer);
+}
+
+function scheduleAutoAdvance() {
+  autoTimer = setTimeout(next, DURATION);
+}
+
+function updateInfo() {
+
+  const data = slideData[current];
+
+  document.getElementById("slide-name").textContent =
+    data.title;
+
+  document.getElementById("slide-desc").textContent =
+    data.desc;
+
+  document.getElementById("slide-counter").textContent =
+    String(current + 1).padStart(2, "0")
+    + " / "
+    + String(TOTAL).padStart(2, "0");
+}
+
+function goTo(i, isManual = false) {
+
+  stopCarouselTimers();
+
+  document
+    .getElementById("slide-" + current)
+    .classList.remove("active");
+
+  const oldSeg =
+    document.getElementById("seg-" + current);
+
+  const oldFill =
+    document.getElementById("fill-" + current);
+
+  oldSeg.classList.remove("active");
+
+  if (i > current) {
+    oldFill.style.width = "100%";
+    oldSeg.classList.add("past");
+  } else {
+    oldFill.style.width = "0%";
+    oldSeg.classList.remove("past");
+  }
+
+  for (let k = 0; k < TOTAL; k++) {
+
+    const seg =
+      document.getElementById("seg-" + k);
+
+    const fill =
+      document.getElementById("fill-" + k);
+
+    if (k < i) {
+
+      seg.classList.remove("active");
+
+      seg.classList.add("past");
+
+      fill.style.width = "100%";
+
+    } else if (k > i) {
+
+      seg.classList.remove("active", "past");
+
+      fill.style.width = "0%";
+    }
+  }
+
+  current = i;
+
+  document
+    .getElementById("slide-" + current)
+    .classList.add("active");
+
+  const newSeg =
+    document.getElementById("seg-" + current);
+
+  newSeg.classList.remove("past");
+
+  newSeg.classList.add("active");
+
+  document.getElementById(
+    "fill-" + current
+  ).style.width = "0%";
+
+  updateInfo();
+
+  if (isManual) {
+
+    resumeTimer = setTimeout(() => {
+
+      startAnimation();
+
+      scheduleAutoAdvance();
+
+    }, MANUAL_PAUSE);
+
+  } else {
+
+    startAnimation();
+
+    scheduleAutoAdvance();
+  }
+}
+
+function step(dir) {
+
+  goTo(
+    (current + dir + TOTAL) % TOTAL,
+    true
+  );
+}
+
+function next() {
+
+  goTo(
+    (current + 1) % TOTAL,
+    false
+  );
+}
+
+updateInfo();
+
+startAnimation();
+
+scheduleAutoAdvance();
+
+const progressBar = document.querySelector(".seg-bar");
+
+progressBar.addEventListener("mouseenter", pauseCarousel);
+progressBar.addEventListener("mouseleave", resumeCarousel);
+
+</script>
+
+</body>
+</html>
