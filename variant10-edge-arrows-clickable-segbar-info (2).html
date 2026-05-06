@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Omron Carousel — Variant 10: Edge Arrows + Clickable Segmented Progress Bar</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: Arial, sans-serif; background: #f0f0f0; }
+
+  .topbar { background: #1a3a6b; padding: 0 24px; display: flex; align-items: center; justify-content: space-between; height: 40px; }
+  .topbar-logo { color: #fff; font-size: 18px; font-weight: 700; letter-spacing: 1px; }
+  .topbar-logo span { color: #7eb8f7; font-size: 12px; font-weight: 400; margin-left: 6px; }
+  .topbar-links { display: flex; gap: 16px; }
+  .topbar-links a { color: #b5d4f4; font-size: 12px; text-decoration: none; }
+
+  .navstrip { background: #fff; border-bottom: 1px solid #ddd; padding: 0 24px; display: flex; align-items: center; height: 40px; gap: 4px; }
+  .navstrip a { font-size: 12px; color: #333; text-decoration: none; padding: 0 12px; height: 100%; display: flex; align-items: center; border-bottom: 2px solid transparent; transition: color 0.2s, border-color 0.2s; }
+  .navstrip a:hover { color: #1a3a6b; border-bottom-color: #1a3a6b; }
+  .navstrip input { margin-left: auto; border: 1px solid #ccc; border-radius: 3px; padding: 4px 10px; font-size: 12px; width: 220px; outline: none; }
+
+  /* ── Hero ── */
+  .hero { position: relative; height: 340px; overflow: hidden; background: #8a9ab0; }
+  .slide { position: absolute; inset: 0; display: flex; opacity: 0; transition: opacity 0.6s ease; }
+  .slide.active { opacity: 1; }
+  .slide-bg { position: absolute; inset: 0; }
+  .slide-content { position: relative; z-index: 2; padding: 36px 32px; width: 340px; flex-shrink: 0; }
+  .slide-tag { display: inline-block; background: #e8f0fa; color: #0c447c; font-size: 10px; font-weight: 700; letter-spacing: 0.5px; padding: 3px 9px; border-radius: 2px; margin-bottom: 14px; text-transform: uppercase; }
+  .slide-box { background: #1a3a6b; padding: 20px 22px; border-radius: 2px; }
+  .slide-box h2 { color: #fff; font-size: 20px; font-weight: 700; line-height: 1.3; margin-bottom: 10px; }
+  .slide-box p { color: #b5d4f4; font-size: 12px; line-height: 1.6; margin-bottom: 14px; }
+  .slide-box a { display: inline-block; border: 1px solid #fff; color: #fff; font-size: 11px; padding: 6px 14px; border-radius: 2px; text-decoration: none; transition: background 0.2s; }
+  .slide-box a:hover { background: rgba(255,255,255,0.12); }
+  .slide-visual { flex: 1; display: flex; align-items: center; justify-content: center; }
+  .machine { display: flex; align-items: flex-end; gap: 8px; }
+  .machine-part { background: #2a3a50; border-radius: 3px; }
+
+  /* Ghost edge arrows */
+  .edge-arrow {
+    position: absolute; top: 50%; transform: translateY(-50%); z-index: 10;
+    width: 36px; height: 36px; border-radius: 50%;
+    background: rgba(255,255,255,0.15);
+    border: 1.5px solid rgba(255,255,255,0.50);
+    color: #fff; font-size: 18px; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    transition: background 0.2s, border-color 0.2s;
+  }
+  .edge-arrow:hover { background: rgba(255,255,255,0.30); border-color: rgba(255,255,255,0.90); }
+  .edge-arrow.left  { left: 12px; }
+  .edge-arrow.right { right: 12px; }
+
+  /* ── Carousel nav ── */
+  .carousel-nav {
+    background: #fff;
+    border-top: 1px solid #e0e0e0;
+    padding: 10px 24px 13px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  /* Segmented bar — narrower height (3px), gaps between segments, centered with reduced width */
+  .seg-bar {
+    display: flex;
+    gap: 5px;
+    width: 55%;
+    margin: 0 auto;
+  }
+  .seg {
+    flex: 1;
+    height: 8px;
+    border-radius: 4px;
+    background: #e0e0e0;
+    cursor: pointer;
+    position: relative;
+    overflow: hidden;
+    transition: background 0.2s;
+  }
+  /* hover: faint blue tint to indicate clickability */
+  .seg:hover { background: #c5ddf7; }
+
+  /* Past segments: fully filled with Omron blue */
+  .seg.past { background: #7eb8f7; }
+  .seg.past:hover { background: #5aa8f0; }
+
+  /* Active segment: animating fill */
+  .seg.active { background: #e0e0e0; }
+
+  /* The animated fill inside active segment */
+  .seg-fill {
+    position: absolute;
+    top: 0; left: 0;
+    height: 100%;
+    width: 0%;
+    background: #1a3a6b;
+    border-radius: 4px;
+  }
+  /* JS drives the animation via requestAnimationFrame, no CSS keyframes */
+
+  /* Info row */
+  .nav-info {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+  }
+  .nav-left { display: flex; align-items: center; gap: 8px; flex: 1; overflow: hidden; }
+  .info-tag {
+    display: inline-block;
+    background: #e8f0fa; color: #0c447c;
+    font-size: 9px; font-weight: 700; letter-spacing: 0.4px;
+    padding: 2px 7px; border-radius: 2px;
+    text-transform: uppercase; flex-shrink: 0;
+  }
+  .nav-text { overflow: hidden; }
+  .slide-name { font-size: 11px; color: #333; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .slide-desc-short { font-size: 10px; color: #888; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: 1px; }
+  .nav-right { flex-shrink: 0; text-align: right; }
+  .slide-counter { font-size: 12px; color: #1a3a6b; font-weight: 700; }
+  .slide-hint { font-size: 10px; color: #bbb; margin-top: 1px; }
+
+  /* ── Feature strip ── */
+  .features { display: grid; grid-template-columns: repeat(3, 1fr); border-top: 1px solid #e0e0e0; }
+  .feat { padding: 16px 20px; border-right: 1px solid #e8e8e8; }
+  .feat:last-child { border-right: none; }
+  .feat-icon { width: 32px; height: 32px; border-radius: 50%; border: 2px solid #1a3a6b; display: flex; align-items: center; justify-content: center; margin-bottom: 8px; }
+  .feat h4 { font-size: 12px; color: #1a3a6b; font-weight: 700; margin-bottom: 4px; }
+  .feat p { font-size: 11px; color: #555; line-height: 1.5; }
+
+  .solutions-bar { background: #f7f7f7; padding: 12px 24px; display: flex; align-items: center; justify-content: space-between; border-top: 1px solid #eee; }
+  .solutions-bar span { font-size: 13px; color: #1a3a6b; font-weight: 700; }
+  .solutions-bar a { font-size: 11px; color: #1a3a6b; border: 1px solid #1a3a6b; padding: 5px 12px; border-radius: 2px; text-decoration: none; transition: background 0.2s, color 0.2s; }
+  .solutions-bar a:hover { background: #1a3a6b; color: #fff; }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="topbar-logo">OMRON <span>Automation</span></div>
+  <div class="topbar-links"><a href="#">Welcome test</a><a href="#">Logout</a><a href="#">My List</a></div>
+</div>
+<div class="navstrip">
+  <a href="#">Our Value</a><a href="#">Products</a><a href="#">Solutions</a><a href="#">Industries</a><a href="#">Services</a>
+  <input type="text" placeholder="Search for products, solutions, software & more" />
+</div>
+
+<div class="hero">
+  <button class="edge-arrow left"  onclick="step(-1)" aria-label="Previous slide">&#8592;</button>
+  <button class="edge-arrow right" onclick="step(1)"  aria-label="Next slide">&#8594;</button>
+
+  <div class="slide active" id="slide-0">
+    <div class="slide-bg" style="background:#8a9ab0;"></div>
+    <div class="slide-content"><span class="slide-tag">New</span><div class="slide-box"><h2>The DX100 Data Flow Edge Device</h2><p>Smarter data at the edge. DX100 simplifies edge deployment with low-code logic, open protocols, and real-time insights.</p><a href="#">Learn More</a></div></div>
+    <div class="slide-visual"><div class="machine"><div class="machine-part" style="width:32px;height:90px"></div><div class="machine-part" style="width:22px;height:120px"></div><div class="machine-part" style="width:44px;height:70px"></div><div class="machine-part" style="width:18px;height:100px"></div></div></div>
+  </div>
+  <div class="slide" id="slide-1">
+    <div class="slide-bg" style="background:#7a8fa0;"></div>
+    <div class="slide-content"><span class="slide-tag">Featured</span><div class="slide-box"><h2>NX Series Machine Controllers</h2><p>High-speed, high-precision machine control for complex manufacturing lines. Scalable to any process size.</p><a href="#">Learn More</a></div></div>
+    <div class="slide-visual"><div class="machine"><div class="machine-part" style="width:50px;height:100px"></div><div class="machine-part" style="width:28px;height:80px"></div><div class="machine-part" style="width:36px;height:110px"></div></div></div>
+  </div>
+  <div class="slide" id="slide-2">
+    <div class="slide-bg" style="background:#6a8090;"></div>
+    <div class="slide-content"><span class="slide-tag">ISO Certified</span><div class="slide-box"><h2>Safety Solutions by Omron</h2><p>Certified safety components and systems designed to protect workers and maximize machine uptime.</p><a href="#">Learn More</a></div></div>
+    <div class="slide-visual"><div class="machine"><div class="machine-part" style="width:24px;height:70px"></div><div class="machine-part" style="width:40px;height:130px"></div><div class="machine-part" style="width:34px;height:80px"></div></div></div>
+  </div>
+  <div class="slide" id="slide-3">
+    <div class="slide-bg" style="background:#5a7080;"></div>
+    <div class="slide-content"><span class="slide-tag">v2.0</span><div class="slide-box"><h2>Sysmac Studio Software</h2><p>One integrated development environment for motion, logic, vision, and safety programming.</p><a href="#">Learn More</a></div></div>
+    <div class="slide-visual"><div class="machine"><div class="machine-part" style="width:38px;height:85px"></div><div class="machine-part" style="width:26px;height:115px"></div><div class="machine-part" style="width:46px;height:65px"></div></div></div>
+  </div>
+</div>
+
+<!-- ✅ VARIANT 10: Edge arrows + Clickable segmented progress bar (animated fill per segment) + Info -->
+<div class="carousel-nav">
+  <div class="seg-bar" id="seg-bar">
+    <div class="seg active" id="seg-0" onclick="goTo(0)"><div class="seg-fill" id="fill-0"></div></div>
+    <div class="seg"        id="seg-1" onclick="goTo(1)"><div class="seg-fill" id="fill-1"></div></div>
+    <div class="seg"        id="seg-2" onclick="goTo(2)"><div class="seg-fill" id="fill-2"></div></div>
+    <div class="seg"        id="seg-3" onclick="goTo(3)"><div class="seg-fill" id="fill-3"></div></div>
+  </div>
+  <div class="nav-info">
+    <div class="nav-left">
+      <span class="info-tag" id="info-tag">New</span>
+      <div class="nav-text">
+        <div class="slide-name" id="slide-name">The DX100 Data Flow Edge Device</div>
+        <div class="slide-desc-short" id="slide-desc">Smarter data at the edge with low-code logic and real-time insights.</div>
+      </div>
+    </div>
+    <div class="nav-right">
+      <div class="slide-counter" id="slide-counter">01 / 04</div>
+      <div class="slide-hint">click bar to jump</div>
+    </div>
+  </div>
+</div>
+
+<div class="features">
+  <div class="feat"><div class="feat-icon"><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="6" stroke="#1a3a6b" stroke-width="1.5"/><path d="M5.5 8l2 2L11 6" stroke="#1a3a6b" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div><h4 id="f1-title">Integrated</h4><p id="f1-desc">Integration is effortless with the DX100. Connects legacy and modern platforms into one streamlined data flow.</p></div>
+  <div class="feat"><div class="feat-icon"><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><rect x="2" y="5" width="12" height="8" rx="1.5" stroke="#1a3a6b" stroke-width="1.5"/><path d="M6 5V4a2 2 0 014 0v1" stroke="#1a3a6b" stroke-width="1.5"/></svg></div><h4 id="f2-title">Integrated</h4><p id="f2-desc">Seamlessly integrate the NXR Remote IO with Sysmac Studio for unified real-time control.</p></div>
+  <div class="feat"><div class="feat-icon"><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M8 2v2M8 12v2M2 8h2M12 8h2" stroke="#1a3a6b" stroke-width="1.5" stroke-linecap="round"/><circle cx="8" cy="8" r="3" stroke="#1a3a6b" stroke-width="1.5"/></svg></div><h4 id="f3-title">Intelligent</h4><p id="f3-desc">Equipped with automatic intelligent setup, making it user-friendly and efficient.</p></div>
+</div>
+<div class="solutions-bar">
+  <span>Omron solutions give your business a competitive advantage</span>
+  <a href="#">See All Solutions</a>
+</div>
+
+<script>
+  const TOTAL      = 4;
+  const DURATION   = 4000; // ms per slide
+
+  const slideData = [
+    { tag:"New",          title:"The DX100 Data Flow Edge Device",  desc:"Smarter data at the edge with low-code logic and real-time insights." },
+    { tag:"Featured",     title:"NX Series Machine Controllers",    desc:"High-speed, high-precision machine control for any production line." },
+    { tag:"ISO Certified",title:"Safety Solutions by Omron",        desc:"Certified components meeting IEC 62061 and ISO 13849 standards." },
+    { tag:"v2.0",         title:"Sysmac Studio Software",           desc:"One environment for motion, logic, vision, and safety programming." }
+  ];
+  const featureData = [
+    { f1:"Integrated", f1d:"Integration is effortless with the DX100. Connects legacy and modern platforms into one streamlined data flow.", f2:"Integrated", f2d:"Seamlessly integrate the NXR Remote IO with Sysmac Studio for unified real-time control.", f3:"Intelligent", f3d:"Equipped with automatic intelligent setup, making it user-friendly and efficient." },
+    { f1:"Fast",       f1d:"Execute complex motion sequences with sub-microsecond precision and deterministic cycle times.", f2:"Scalable",    f2d:"Modular I/O expands to fit any line size without reprogramming existing logic.", f3:"Connected",   f3d:"Native EtherCAT connectivity for real-time industrial networking at every level." },
+    { f1:"Certified",  f1d:"All safety components meet IEC 62061 and ISO 13849 global functional safety standards.",      f2:"Flexible",    f2d:"Modular safety relays and controllers adapt to any machine layout.", f3:"Reliable",    f3d:"Proven in over 100,000 global installations across all major industries." },
+    { f1:"Unified",    f1d:"Program motion, logic, vision, and safety from a single development interface.",               f2:"Efficient",   f2d:"Drag-and-drop editors reduce development and commissioning time significantly.", f3:"Smart",       f3d:"Auto-topology detection maps your machine network instantly." }
+  ];
+
+  let current    = 0;
+  let startTime  = null;   // when current slide animation started
+  let rafId      = null;   // requestAnimationFrame handle
+  let autoTimer  = null;   // setTimeout handle for slide advance
+
+  // ── rAF loop: animates the active segment fill smoothly ──────────────────
+  function animateFill(timestamp) {
+    if (!startTime) startTime = timestamp;
+    const elapsed = timestamp - startTime;
+    const pct     = Math.min((elapsed / DURATION) * 100, 100);
+
+    const fill = document.getElementById('fill-' + current);
+    if (fill) fill.style.width = pct + '%';
+
+    if (pct < 100) {
+      rafId = requestAnimationFrame(animateFill);
+    }
+    // when pct hits 100, autoTimer fires next()
+  }
+
+  function startAnimation() {
+    cancelAnimationFrame(rafId);
+    startTime = null;
+    // reset current fill to 0
+    const fill = document.getElementById('fill-' + current);
+    if (fill) fill.style.width = '0%';
+    rafId = requestAnimationFrame(animateFill);
+  }
+
+  // ── Slide transition ──────────────────────────────────────────────────────
+  function goTo(i) {
+    // clear timers
+    cancelAnimationFrame(rafId);
+    clearTimeout(autoTimer);
+
+    // hide old slide, mark old segment
+    document.getElementById('slide-' + current).classList.remove('active');
+    const oldSeg  = document.getElementById('seg-' + current);
+    const oldFill = document.getElementById('fill-' + current);
+    oldSeg.classList.remove('active');
+    // if going forward, fill old seg completely; if going back, empty it
+    if (i > current) {
+      oldFill.style.width = '100%';
+      oldSeg.classList.add('past');
+    } else {
+      oldFill.style.width = '0%';
+      oldSeg.classList.remove('past');
+    }
+
+    // reset any segments between old and new
+    for (let k = 0; k < TOTAL; k++) {
+      const seg  = document.getElementById('seg-' + k);
+      const fill = document.getElementById('fill-' + k);
+      if (k < i) {
+        seg.classList.remove('active');
+        seg.classList.add('past');
+        fill.style.width = '100%';
+      } else if (k > i) {
+        seg.classList.remove('active', 'past');
+        fill.style.width = '0%';
+      }
+    }
+
+    current = i;
+
+    // activate new slide + segment
+    document.getElementById('slide-' + current).classList.add('active');
+    const newSeg = document.getElementById('seg-' + current);
+    newSeg.classList.remove('past');
+    newSeg.classList.add('active');
+    document.getElementById('fill-' + current).style.width = '0%';
+
+    updateInfo();
+    startAnimation();
+
+    // schedule auto-advance
+    autoTimer = setTimeout(next, DURATION);
+  }
+
+  function step(dir) { goTo((current + dir + TOTAL) % TOTAL); }
+  function next()     { goTo((current + 1)           % TOTAL); }
+
+  // ── Info panel update ─────────────────────────────────────────────────────
+  function updateInfo() {
+    const s = slideData[current];
+    document.getElementById('info-tag').textContent      = s.tag;
+    document.getElementById('slide-name').textContent    = s.title;
+    document.getElementById('slide-desc').textContent    = s.desc;
+    document.getElementById('slide-counter').textContent =
+      String(current + 1).padStart(2, '0') + ' / ' + String(TOTAL).padStart(2, '0');
+
+    const f = featureData[current];
+    document.getElementById('f1-title').textContent = f.f1; document.getElementById('f1-desc').textContent = f.f1d;
+    document.getElementById('f2-title').textContent = f.f2; document.getElementById('f2-desc').textContent = f.f2d;
+    document.getElementById('f3-title').textContent = f.f3; document.getElementById('f3-desc').textContent = f.f3d;
+  }
+
+  // ── Boot ──────────────────────────────────────────────────────────────────
+  updateInfo();
+  startAnimation();
+  autoTimer = setTimeout(next, DURATION);
+</script>
+</body>
+</html>
