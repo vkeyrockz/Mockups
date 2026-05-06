@@ -343,6 +343,9 @@
 const TOTAL = 4;
 const DURATION = 4000;
 const MANUAL_PAUSE = 5000;
+let isPaused = false;
+let pauseStartTime = 0;
+let pausedElapsed = 0;
 
 const slideData = [
   {
@@ -373,10 +376,12 @@ let resumeTimer = null;
 function animateFill(timestamp) {
 
   if (!startTime) {
-    startTime = timestamp;
+    startTime = timestamp - pausedElapsed;
   }
 
   const elapsed = timestamp - startTime;
+
+  pausedElapsed = elapsed;
 
   const pct = Math.min(
     (elapsed / DURATION) * 100,
@@ -389,16 +394,51 @@ function animateFill(timestamp) {
     fill.style.width = pct + "%";
   }
 
-  if (pct < 100) {
+  if (pct < 100 && !isPaused) {
     rafId = requestAnimationFrame(animateFill);
   }
 }
 
-function startAnimation() {
+function pauseCarousel() {
+
+  if (isPaused) {
+    return;
+  }
+
+  isPaused = true;
+
+  cancelAnimationFrame(rafId);
+
+  clearTimeout(autoTimer);
+
+  pauseStartTime = performance.now();
+}
+
+function resumeCarousel() {
+
+  if (!isPaused) {
+    return;
+  }
+
+  isPaused = false;
+
+  const remaining =
+    DURATION - pausedElapsed;
+
+  rafId = requestAnimationFrame(animateFill);
+
+  autoTimer = setTimeout(
+    next,
+    remaining
+  );
+}
+ 
+ function startAnimation() {
 
   cancelAnimationFrame(rafId);
 
   startTime = null;
+  pausedElapsed = 0;
 
   const fill = document.getElementById("fill-" + current);
 
@@ -543,6 +583,12 @@ updateInfo();
 startAnimation();
 
 scheduleAutoAdvance();
+ 
+ const hero = document.querySelector(".hero");
+
+hero.addEventListener("mouseenter", pauseCarousel);
+
+hero.addEventListener("mouseleave", resumeCarousel);
 
 </script>
 
